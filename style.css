@@ -106,14 +106,14 @@ body {
   transition: background 0.6s cubic-bezier(0.16, 1, 0.3, 1),
               color 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 1.6;
-  cursor: none;
+  cursor: auto;
 }
 
 a, button, .dock-btn, .nav-auth-btn, .repo-pill, .char-floating-chat,
 .btn-primary, .btn-secondary, .btn-demo, .download-btn, .btn-auth,
 .btn-oauth, .btn-plan, .theme-toggle, .eco-tab-btn, .model-cat-btn,
 .rate-pill, .platform-link, .eco-btn, .doc-card, .eco-tab-btn {
-  cursor: none;
+  cursor: pointer;
 }
 
 h1, h2, h3, h4, h5, h6 {
