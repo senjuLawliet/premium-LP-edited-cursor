@@ -532,409 +532,7 @@
   // ============================================
 
   // ============================================
-  // 12. STAR DUST TRAIL (Light Blue Neon Particles)
-  // ============================================
-  const stardustCanvas = document.getElementById('stardust-canvas');
-  const sdCtx = stardustCanvas.getContext('2d');
-  let sdParticles = [];
-
-  function resizeStardust() {
-    const dpr = window.devicePixelRatio || 1;
-    stardustCanvas.width = window.innerWidth * dpr;
-    stardustCanvas.height = window.innerHeight * dpr;
-    stardustCanvas.style.width = window.innerWidth + 'px';
-    stardustCanvas.style.height = window.innerHeight + 'px';
-    sdCtx.setTransform(1, 0, 0, 1, 0, 0);
-    sdCtx.scale(dpr, dpr);
-  }
-  resizeStardust();
-  window.addEventListener('resize', resizeStardust);
-
-  // Track mouse for stardust (reuse targetX/targetY from main loop)
-  let sdMouseX = 0, sdMouseY = 0;
-  document.addEventListener('mousemove', (e) => {
-    sdMouseX = e.clientX;
-    sdMouseY = e.clientY;
-  });
-
-  class StarDust {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.size = Math.random() * 3 + 1;
-      this.speedX = (Math.random() - 0.5) * 1.2;
-      this.speedY = (Math.random() - 0.5) * 1.2 - 0.5; // slight upward drift
-      this.life = 1;
-      this.decay = Math.random() * 0.015 + 0.008;
-      this.sparkle = Math.random() * 0.5 + 0.5;
-      this.rotation = Math.random() * Math.PI * 2;
-      this.shape = Math.random() > 0.6 ? 'star' : 'circle'; // mix of stars and circles
-    }
-    update() {
-      this.x += this.speedX;
-      this.y += this.speedY;
-      this.speedX *= 0.98;
-      this.speedY *= 0.98;
-      this.life -= this.decay;
-      this.size *= 0.995;
-      this.rotation += 0.02;
-    }
-    draw(ctx) {
-      if (this.life <= 0) return;
-      const alpha = this.life * this.sparkle;
-
-      // Determine muted dust color based on theme
-      const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-      // Ultra-faded muted lavender-gray — ghost-like, barely visible
-      const baseR = 180, baseG = 170, baseB = 195;
-      const outerMult = isDark ? 0.12 : 0.06;
-      const coreMult = isDark ? 0.25 : 0.12;
-      const brightMult = isDark ? 0.18 : 0.08;
-
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.rotation);
-
-      // Outer glow — extremely faint mist
-      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 5);
-      gradient.addColorStop(0, `rgba(${baseR}, ${baseG}, ${baseB}, ${alpha * outerMult})`);
-      gradient.addColorStop(0.6, `rgba(${baseR}, ${baseG}, ${baseB}, ${alpha * outerMult * 0.4})`);
-      gradient.addColorStop(1, `rgba(${baseR}, ${baseG}, ${baseB}, 0)`);
-
-      ctx.beginPath();
-      ctx.arc(0, 0, this.size * 5, 0, Math.PI * 2);
-      ctx.fillStyle = gradient;
-      ctx.fill();
-
-      // Core particle — dusty lavender-slate
-      ctx.beginPath();
-      if (this.shape === 'star') {
-        for (let i = 0; i < 8; i++) {
-          const angle = (i * Math.PI) / 4;
-          const r = i % 2 === 0 ? this.size : this.size * 0.4;
-          const px = Math.cos(angle) * r;
-          const py = Math.sin(angle) * r;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-      } else {
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-      }
-
-      ctx.fillStyle = `rgba(${baseR}, ${baseG}, ${baseB}, ${alpha * coreMult})`;
-      ctx.fill();
-
-      // Faint inner core
-      ctx.beginPath();
-      ctx.arc(0, 0, this.size * 0.35, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${baseR}, ${baseG}, ${baseB}, ${alpha * brightMult})`;
-      ctx.fill();
-
-      ctx.restore();
-    }
-  }
-
-  let spawnCounter = 0;
-  function animateStardust() {
-    sdCtx.clearRect(0, 0, stardustCanvas.width, stardustCanvas.height);
-
-    // Spawn new particles at cursor position
-    spawnCounter++;
-    const spawnRate = 3; // particles per frame
-    if (sdMouseX > 0 && sdMouseY > 0) {
-      for (let i = 0; i < spawnRate; i++) {
-        const offsetX = (Math.random() - 0.5) * 6;
-        const offsetY = (Math.random() - 0.5) * 6;
-        sdParticles.push(new StarDust(sdMouseX + offsetX, sdMouseY + offsetY));
-      }
-    }
-
-    // Update and draw
-    for (let i = sdParticles.length - 1; i >= 0; i--) {
-      const p = sdParticles[i];
-      p.update();
-      if (p.life <= 0 || p.size < 0.1) {
-        sdParticles.splice(i, 1);
-        continue;
-      }
-      p.draw(sdCtx);
-    }
-
-    // Limit particle count
-    if (sdParticles.length > 500) {
-      sdParticles.splice(0, sdParticles.length - 500);
-    }
-
-    requestAnimationFrame(animateStardust);
-  }
-
-  animateStardust();
-
-
-  // ============================================
-  // 13. FLUID RIBBON TRAIL CURSOR (Smooth Bezier Snake)
-  // ============================================
-  const trailCanvas = document.getElementById('cursor-trail-canvas');
-  const trailCtx = trailCanvas.getContext('2d');
-
-  function resizeTrailCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    trailCanvas.width = window.innerWidth * dpr;
-    trailCanvas.height = window.innerHeight * dpr;
-    trailCanvas.style.width = window.innerWidth + 'px';
-    trailCanvas.style.height = window.innerHeight + 'px';
-    trailCtx.setTransform(1, 0, 0, 1, 0, 0);
-    trailCtx.scale(dpr, dpr);
-  }
-  resizeTrailCanvas();
-  window.addEventListener('resize', resizeTrailCanvas);
-
-  // Track raw mouse for trail
-  let trailMouseX = 0, trailMouseY = 0;
-  document.addEventListener('mousemove', (e) => {
-    trailMouseX = e.clientX;
-    trailMouseY = e.clientY;
-  });
-
-  // Single array of trail points (14 points for short snappy ribbon)
-  const TRAIL_LENGTH = 14;
-  const trail = [];
-
-  // Initialize trail at center of screen
-  const initX = window.innerWidth / 2;
-  const initY = window.innerHeight / 2;
-  for (let i = 0; i < TRAIL_LENGTH; i++) {
-    trail.push({ x: initX, y: initY });
-  }
-
-  // Easing factor for fluid liquid ribbon physics (higher = snappier)
-  const LERP_FACTOR = 0.48;
-
-  function getTrailColors() {
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    if (isDark) {
-      return {
-        colors: ['#8f3ba7', '#22318e', '#2d2370'],
-        shadowColor: '#8f3ba7',
-        shadowBlur: 14
-      };
-    } else {
-      return {
-        colors: ['#796ce4', '#5c5be7', '#558af2'],
-        shadowColor: '#796ce4',
-        shadowBlur: 6
-      };
-    }
-  }
-
-  function hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 143, g: 59, b: 167 };
-  }
-
-  // Draw a smooth bezier ribbon through the trail points
-  function drawBezierRibbon(points, startIdx, endIdx, lineWidthStart, lineWidthEnd, alpha) {
-    if (points.length < 2) return;
-    const n = Math.min(endIdx, points.length - 1);
-
-    // Build midpoints for smooth quadratic bezier curves
-    // This creates a catmull-rom style smooth interpolation through all points
-    trailCtx.globalAlpha = alpha;
-    trailCtx.lineCap = 'round';
-    trailCtx.lineJoin = 'round';
-
-    // Draw in segments with progressive width tapering
-    for (let seg = 0; seg < n - 1; seg++) {
-      const i0 = Math.max(0, seg - 1);
-      const i1 = seg;
-      const i2 = seg + 1;
-      const i3 = Math.min(seg + 2, n);
-
-      const p0 = points[i0];
-      const p1 = points[i1];
-      const p2 = points[i2];
-      const p3 = points[i3];
-
-      // Tension factor for smooth curves
-      const tension = 0.3;
-
-      // Calculate control points for cubic Bezier (Catmull-Rom to Bezier)
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
-
-      // Calculate interpolated width at this segment
-      const segRatio = seg / (n - 1);
-      const segWidth = lineWidthStart + (lineWidthEnd - lineWidthStart) * segRatio;
-
-      trailCtx.lineWidth = Math.max(segWidth, 0.3);
-
-      trailCtx.beginPath();
-      trailCtx.moveTo(p1.x, p1.y);
-      trailCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-      trailCtx.stroke();
-    }
-
-    trailCtx.globalAlpha = 1;
-  }
-
-  function animateTrail() {
-    trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
-
-    // Point 0 (head) snaps exactly to current mouse coordinates
-    trail[0].x += (trailMouseX - trail[0].x) * 1.0;
-    trail[0].y += (trailMouseY - trail[0].y) * 1.0;
-
-    // Lerp each subsequent point towards the previous one (fluid physics chain)
-    for (let i = 1; i < TRAIL_LENGTH; i++) {
-      trail[i].x += (trail[i-1].x - trail[i].x) * LERP_FACTOR;
-      trail[i].y += (trail[i-1].y - trail[i].y) * LERP_FACTOR;
-    }
-
-    const theme = getTrailColors();
-    const color1 = hexToRgb(theme.colors[0]);
-    const color2 = hexToRgb(theme.colors[1]);
-    const color3 = hexToRgb(theme.colors[2]);
-
-    // --- Layer 1: Outer glow (dark mode neon, light mode subtle) ---
-    trailCtx.shadowColor = theme.shadowColor;
-    trailCtx.shadowBlur = theme.shadowBlur;
-
-    // Wide faint outer trail
-    const outerAlpha = 0.15;
-    trailCtx.strokeStyle = `rgba(${color1.r}, ${color1.g}, ${color1.b}, 0.2)`;
-    drawBezierRibbon(trail, 0, TRAIL_LENGTH, 8, 0.5, outerAlpha);
-
-    // --- Layer 2: Main colored ribbon with gradient ---
-    trailCtx.shadowBlur = theme.shadowBlur * 0.6;
-
-    // Draw in segments with per-segment gradient colors
-    trailCtx.lineCap = 'round';
-    trailCtx.lineJoin = 'round';
-
-    // Draw segments from head to tail with interpolated colors and tapered width
-    for (let seg = 0; seg < TRAIL_LENGTH - 2; seg++) {
-      const i0 = Math.max(0, seg - 1);
-      const i1 = seg;
-      const i2 = seg + 1;
-      const i3 = Math.min(seg + 2, TRAIL_LENGTH - 1);
-
-      const p0 = trail[i0];
-      const p1 = trail[i1];
-      const p2 = trail[i2];
-      const p3 = trail[i3];
-
-      const tension = 0.3;
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
-
-      // Tapered width: thick at head, thin at tail (rapid drop-off)
-      const segRatio = seg / (TRAIL_LENGTH - 2);
-      const segWidth = 6 * (1 - segRatio * 0.95);
-      trailCtx.lineWidth = Math.max(segWidth, 0.3);
-
-      // Interpolate color for this segment
-      let r, g, b;
-      if (segRatio < 0.5) {
-        const t = segRatio / 0.5;
-        r = Math.round(color1.r + (color2.r - color1.r) * t);
-        g = Math.round(color1.g + (color2.g - color1.g) * t);
-        b = Math.round(color1.b + (color2.b - color1.b) * t);
-      } else {
-        const t = (segRatio - 0.5) / 0.5;
-        r = Math.round(color2.r + (color3.r - color2.r) * t);
-        g = Math.round(color2.g + (color3.g - color2.g) * t);
-        b = Math.round(color2.b + (color3.b - color2.b) * t);
-      }
-
-      // Fade alpha towards the tail (quick evaporation)
-      const segAlpha = 1 - segRatio * 0.85;
-
-      trailCtx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${segAlpha})`;
-      trailCtx.beginPath();
-      trailCtx.moveTo(p1.x, p1.y);
-      trailCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-      trailCtx.stroke();
-    }
-
-    // --- Layer 3: Sharp inner core ribbon (bright, thinner) ---
-    trailCtx.shadowBlur = 0;
-    trailCtx.shadowColor = 'transparent';
-
-    for (let seg = 0; seg < TRAIL_LENGTH - 3; seg++) {
-      const i0 = Math.max(0, seg - 1);
-      const i1 = seg;
-      const i2 = seg + 1;
-      const i3 = Math.min(seg + 2, TRAIL_LENGTH - 2);
-
-      const p0 = trail[i0];
-      const p1 = trail[i1];
-      const p2 = trail[i2];
-      const p3 = trail[i3];
-
-      const tension = 0.35;
-      const cp1x = p1.x + (p2.x - p0.x) * tension;
-      const cp1y = p1.y + (p2.y - p0.y) * tension;
-      const cp2x = p2.x - (p3.x - p1.x) * tension;
-      const cp2y = p2.y - (p3.y - p1.y) * tension;
-
-      const segRatio = seg / (TRAIL_LENGTH - 3);
-      const segWidth = 2.5 * (1 - segRatio * 0.92);
-      trailCtx.lineWidth = Math.max(segWidth, 0.2);
-
-      const r = Math.round(color1.r + (color2.r - color1.r) * segRatio);
-      const g = Math.round(color1.g + (color2.g - color1.g) * segRatio);
-      const b = Math.round(color1.b + (color2.b - color1.b) * segRatio);
-      const segAlpha = 0.9 - segRatio * 0.85;
-
-      trailCtx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${segAlpha})`;
-      trailCtx.beginPath();
-      trailCtx.moveTo(p1.x, p1.y);
-      trailCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-      trailCtx.stroke();
-    }
-
-    // Reset shadow
-    trailCtx.shadowBlur = 0;
-    trailCtx.shadowColor = 'transparent';
-
-    // Draw the core dot at the head
-    trailCtx.shadowColor = theme.shadowColor;
-    trailCtx.shadowBlur = theme.shadowBlur * 0.8;
-
-    const coreRadius = 3.5;
-    const gradient = trailCtx.createRadialGradient(
-      trail[0].x, trail[0].y, 0,
-      trail[0].x, trail[0].y, coreRadius * 2
-    );
-    gradient.addColorStop(0, `rgba(${color1.r}, ${color1.g}, ${color1.b}, 1)`);
-    gradient.addColorStop(0.6, `rgba(${color1.r}, ${color1.g}, ${color1.b}, 0.8)`);
-    gradient.addColorStop(1, `rgba(${color1.r}, ${color1.g}, ${color1.b}, 0)`);
-
-    trailCtx.beginPath();
-    trailCtx.arc(trail[0].x, trail[0].y, coreRadius, 0, Math.PI * 2);
-    trailCtx.fillStyle = gradient;
-    trailCtx.fill();
-
-    trailCtx.shadowBlur = 0;
-    trailCtx.shadowColor = 'transparent';
-
-    requestAnimationFrame(animateTrail);
-  }
-
-  animateTrail();
-
-
-  // ============================================
-  // 14. "GET STARTED FREE" → OPENS AUTH MODAL
+  // 12. "GET STARTED FREE" → OPENS AUTH MODAL
   // ============================================
   const getStartedBtns = document.querySelectorAll('.btn-primary');
   getStartedBtns.forEach(btn => {
@@ -996,5 +594,125 @@
       isScrolling = false;
     });
   }
+
+
+  // ============================================
+  // 16. 3D MESH CURSOR TRAIL (Triangulation overlay)
+  //     Extracted from cursor-test/mouse-trail.js
+  // ============================================
+  (function initMeshTrail() {
+    const meshCanvas = document.getElementById('mesh-trail-canvas');
+    if (!meshCanvas || !meshCanvas.getContext) return;
+
+    const meshCtx = meshCanvas.getContext('2d');
+
+    // Config matching mouse-trail.js defaults
+    const MAX_POINTS = 25;
+    const MAX_AGE = 800;
+    const CONNECT_DISTANCE = 120;
+    const POINT_BASE_SIZE = 3;
+    const LINE_ALPHA = 0.3;
+    const LINE_WIDTH = 0.5;
+    const LIGHT_COLOR = '92, 91, 231';
+    const DARK_COLOR = '143, 59, 167';
+
+    let trails = [];
+    let trailTimer = null;
+
+    function resizeMeshCanvas() {
+      meshCanvas.width = window.innerWidth;
+      meshCanvas.height = window.innerHeight;
+    }
+    resizeMeshCanvas();
+    window.addEventListener('resize', resizeMeshCanvas);
+
+    // Track mouse for mesh trail
+    document.addEventListener('mousemove', function (e) {
+      const now = Date.now();
+      trails.push({
+        x: e.clientX,
+        y: e.clientY,
+        age: now,
+        size: Math.random() * 3 + 1,
+        hue: Math.random() > 0.5 ? 220 : 260
+      });
+
+      if (trails.length > MAX_POINTS) {
+        trails = trails.slice(-MAX_POINTS);
+      }
+
+      if (!trailTimer) {
+        drawMeshTrails();
+      }
+    });
+
+    function drawMeshTrails() {
+      // FULL clear on every frame — no residual mist or smoke
+      meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+
+      const now = Date.now();
+
+      // Filter expired points
+      trails = trails.filter(function (t) {
+        return now - t.age < MAX_AGE;
+      });
+
+      if (trails.length === 0) {
+        trailTimer = null;
+        return;
+      }
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const color = isDark ? DARK_COLOR : LIGHT_COLOR;
+
+      // Draw trail dots (gradient circles)
+      trails.forEach(function (point) {
+        const age = now - point.age;
+        const alpha = Math.max(0, 1 - age / MAX_AGE);
+        const scale = 1 - age / MAX_AGE;
+
+        meshCtx.beginPath();
+        meshCtx.arc(point.x, point.y, point.size * scale, 0, Math.PI * 2);
+
+        const gradient = meshCtx.createRadialGradient(
+          point.x, point.y, 0,
+          point.x, point.y, point.size * scale
+        );
+
+        gradient.addColorStop(0, 'rgba(' + color + ', ' + (alpha * 0.6) + ')');
+        gradient.addColorStop(0.5, 'rgba(' + color + ', ' + (alpha * 0.2) + ')');
+        gradient.addColorStop(1, 'rgba(' + color + ', 0)');
+
+        meshCtx.fillStyle = gradient;
+        meshCtx.fill();
+      });
+
+      // Triangulation: connect nearby points with lines
+      for (let i = 0; i < trails.length; i++) {
+        for (let j = i + 1; j < trails.length; j++) {
+          const dx = trails[j].x - trails[i].x;
+          const dy = trails[j].y - trails[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < CONNECT_DISTANCE) {
+            const alpha1 = 1 - (now - trails[i].age) / MAX_AGE;
+            const alpha2 = 1 - (now - trails[j].age) / MAX_AGE;
+            const avgAlpha = (alpha1 + alpha2) / 2 * LINE_ALPHA * (1 - dist / CONNECT_DISTANCE);
+
+            meshCtx.beginPath();
+            meshCtx.moveTo(trails[i].x, trails[i].y);
+            meshCtx.lineTo(trails[j].x, trails[j].y);
+
+            const lineColor = isDark ? DARK_COLOR : LIGHT_COLOR;
+            meshCtx.strokeStyle = 'rgba(' + lineColor + ', ' + avgAlpha + ')';
+            meshCtx.lineWidth = LINE_WIDTH;
+            meshCtx.stroke();
+          }
+        }
+      }
+
+      trailTimer = requestAnimationFrame(drawMeshTrails);
+    }
+  })();
 
 })();

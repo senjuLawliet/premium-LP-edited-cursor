@@ -158,19 +158,8 @@ a {
   transition: opacity 0.3s ease;
 }
 
-/* ----- Star Dust Canvas ----- */
-#stardust-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-  display: block;
-}
-
-/* ----- Fluid Ribbon Trail Cursor Canvas ----- */
-#cursor-trail-canvas {
+/* ----- 3D Mesh Cursor Trail (Triangulation overlay) ----- */
+#mesh-trail-canvas {
   position: fixed;
   top: 0;
   left: 0;
